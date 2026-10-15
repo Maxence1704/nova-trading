@@ -60,7 +60,10 @@ body::before {
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .16); background-clip: content-box; }
 
 /* ================= STRUCTURE ================= */
-.app { position: relative; z-index: 1; display: grid; grid-template-columns: 60px 1fr; height: 100vh; }
+.app {
+  position: relative; z-index: 1; display: grid; grid-template-columns: 60px 1fr;
+  height: 100vh; height: 100dvh;
+}
 
 .rail {
   border-right: 1px solid var(--line);
@@ -234,6 +237,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px;
 }
 .mode-chip .t { font-size: 10.5px; font-weight: 600; color: var(--txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mode-chip .s { font-size: 9.5px; color: var(--txt-3); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mode-chip:empty { display: none; }
 
 /* ================= SESSION ================= */
 .session { display: grid; grid-template-columns: 1fr 336px; flex: 1; min-height: 0; }
@@ -483,6 +487,7 @@ td.r { text-align: right; font-variant-numeric: tabular-nums; }
 .mt-s { margin-top: 8px; }
 .mb { margin-bottom: 14px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.coach-grid { grid-template-columns: 1.15fr .85fr; gap: 16px; align-items: start; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 30px 40px 60px; width: 100%; }
 .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
 
@@ -496,13 +501,153 @@ td.r { text-align: right; font-variant-numeric: tabular-nums; }
 
 .spark { width: 100%; height: 100%; display: block; }
 
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Tablette */
 @media (max-width: 1280px) {
   .mode-chip { display: none; }
 }
 
 @media (max-width: 1180px) {
   .session { grid-template-columns: 1fr 300px; }
-  .overlay-hide { display: none; }
   .stats-strip { grid-template-columns: repeat(2, 1fr); }
   .modes { grid-template-columns: 1fr; }
+  .coach-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Mobile : barre d'onglets en bas, session empilée ---------- */
+@media (max-width: 900px) {
+  :root { --tabbar: calc(58px + env(safe-area-inset-bottom, 0px)); }
+
+  .app { display: block; }
+
+  .rail {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    flex-direction: row; justify-content: space-around; align-items: center;
+    height: var(--tabbar);
+    padding: 4px 4px env(safe-area-inset-bottom, 0px);
+    border-right: 0; border-top: 1px solid var(--line);
+    background: rgba(10, 12, 15, .94);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 -12px 32px -18px rgba(0, 0, 0, .9);
+  }
+  .brand { display: none; }
+  .nav { flex-direction: row; width: auto; gap: 2px; }
+  .nav button { width: 54px; height: 46px; border-radius: 12px; }
+  .nav button.on::before {
+    left: 50%; top: auto; bottom: 3px; transform: translateX(-50%);
+    width: 16px; height: 2px;
+  }
+  .rail-foot { margin: 0 0 0 4px; }
+  .lvl { width: 30px; height: 30px; font-size: 10px; }
+
+  .main { height: calc(100vh - var(--tabbar)); height: calc(100dvh - var(--tabbar)); }
+
+  /* L'objectif (défi, leçon) reste affiché : c'est le cadre de la partie */
+  .mode-chip {
+    display: flex; order: 3; flex: 1 1 100%; max-width: none;
+    flex-direction: row; align-items: center; gap: 7px; padding: 6px 10px;
+  }
+  .mode-chip .s { text-transform: none; letter-spacing: .02em; font-size: 10px; }
+  .transport { order: 2; }
+
+  /* Session : graphique en haut, dock en dessous */
+  .session { grid-template-columns: 1fr; grid-template-rows: minmax(190px, 1.05fr) 1fr; }
+  .chartwrap { min-height: 170px; }
+  .dock { border-left: 0; border-top: 1px solid var(--line); }
+  .dock-body { padding: 12px; }
+
+  /* Barre supérieure sur plusieurs lignes */
+  .topbar {
+    height: auto; flex: 0 0 auto; flex-wrap: wrap;
+    padding: 8px 12px; gap: 7px; row-gap: 7px;
+  }
+  .topbar .inst { flex: 1 1 auto; min-width: 0; gap: 8px; }
+  .topbar .inst select { width: 132px !important; text-overflow: ellipsis; }
+  .inst-price { font-size: 14px; }
+  .inst-spread { font-size: 9.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #tfSeg { flex: 1 1 100%; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  #tfSeg::-webkit-scrollbar { display: none; }
+  #tfSeg button { flex: 1 0 auto; }
+  #overlaySeg { flex: 0 0 auto; }
+  .transport { margin-left: auto; flex: 1 1 auto; justify-content: flex-end; }
+  .clock { display: none; }
+
+  .chart-foot { height: 34px; flex: 0 0 34px; gap: 12px; padding: 0 12px; font-size: 10.5px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .chart-foot::-webkit-scrollbar { display: none; }
+
+  /* Cartes et contenus */
+  .wrap { padding: 22px 16px 32px; }
+  .home-in { padding: 26px 18px 40px; }
+  .h1 { font-size: 25px; }
+  .hero p { font-size: 13.5px; }
+  .hero { margin-bottom: 28px; }
+  .modes { gap: 10px; margin-top: 24px; }
+  .mode { padding: 16px; }
+  .stats-strip { gap: 8px; margin-top: 24px; }
+  .head { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .lessons { grid-template-columns: 1fr; }
+  .axis { grid-template-columns: 92px 1fr 30px; gap: 9px; }
+
+  /* Cibles tactiles */
+  .btn { min-height: 40px; padding: 9px 14px; }
+  .btn--sm { min-height: 34px; padding: 6px 10px; }
+  .seg button { padding: 8px 11px; }
+  .tbtn { width: 38px; height: 38px; }
+  .opt { padding: 12px; }
+  input, select, textarea { font-size: 16px; }
+  input[type=range] { height: 4px; }
+
+  /* Modale en feuille basse */
+  .modal {
+    left: 0; right: 0; bottom: 0; top: auto; transform: none;
+    width: 100%; max-width: none; border-radius: 18px 18px 0 0;
+    max-height: calc(94vh - env(safe-area-inset-bottom, 0px));
+    max-height: calc(94dvh - env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: sheet .3s var(--ease);
+  }
+  @keyframes sheet { from { transform: translateY(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+  .modal-h { padding: 16px 16px 12px; }
+  .modal-b { padding: 14px 16px; }
+  .modal-f { padding: 12px 16px 16px; }
+  .modal-f .btn { flex: 1; }
+
+  /* Carte coach */
+  .coach-card { left: 10px; right: 10px; bottom: 10px; width: auto; max-width: none; padding: 14px; }
+  .coach-q { font-size: 14px; }
+  .hint { left: 10px; right: 10px; top: 8px; transform: none; text-align: center; font-size: 11px; }
+
+  .toast { left: 12px; right: 12px; transform: translateY(14px); bottom: calc(70px + env(safe-area-inset-bottom, 0px)); text-align: center; }
+  .toast.in { transform: none; }
+}
+
+/* ---------- Téléphone en paysage : on repasse en deux colonnes ---------- */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 520px) {
+  .session { grid-template-columns: 1fr 250px; grid-template-rows: none; }
+  .dock { border-left: 1px solid var(--line); border-top: 0; }
+  #overlaySeg, .chart-foot { display: none; }
+  .topbar { padding: 6px 10px; }
+  .chartwrap { min-height: 120px; }
+}
+
+/* ---------- Petits téléphones ---------- */
+@media (max-width: 560px) {
+  .session { grid-template-rows: minmax(180px, 1fr) 1fr; }
+  .h1 { font-size: 22px; }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .tile .v { font-size: 14px; }
+  .tiles { gap: 6px; }
+  .crit { flex-wrap: wrap; }
+  .crit-bar { width: 100%; order: 3; margin-top: 6px; }
+  .score-ring { gap: 11px; }
+  #jTable { font-size: 11px; }
+  th, td { padding: 8px 7px; }
+}
+
+/* Réduit les animations si l'utilisateur le demande */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
