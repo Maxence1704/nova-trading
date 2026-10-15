@@ -951,11 +951,24 @@ Nova.App = (function () {
   }
 
   /* ---------- Initialisation ---------- */
+  function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    if (location.protocol === 'file:') return;         /* file:// n'a pas de scope SW */
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => { });
+    });
+  }
+
   function init() {
     Nova.UI.buildNav();
     buildTopbar();
-    Nova.UI.show('home');
+    /* raccourcis de l'icône d'app (manifest.shortcuts) */
+    const h = (location.hash || '').replace('#', '');
+    if (h === 'session') { Nova.UI.show('home'); start({ mode: 'learn' }); }
+    else if (['home', 'campaign', 'journal', 'coach', 'library'].indexOf(h) >= 0) Nova.UI.show(h);
+    else Nova.UI.show('home');
     document.getElementById('railLvl').textContent = 'N' + (Nova.stats.level(axes().mastery).idx + 1);
+    registerSW();
   }
 
   return {

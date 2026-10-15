@@ -298,60 +298,113 @@ class Chart {
     g.restore();
   }
 
-  /* ---------- Interaction ---------- */
+  /* ---------- Interaction (souris + tactile) ---------- */
+  down(m) {
+    if (this.mode === 'draft' && this.draft) {
+      const hit = this.hitLine(m.y);
+      if (hit) { this.dragTarget = hit; this.mode = 'drag'; return; }
+    }
+    if (this.mode === 'draft' && !this.draft) {
+      this.draft = null;
+      this.onPick && this.onPick(this.pOf(m.y));
+      return;
+    }
+    this.panStart = { x: m.x, offset: this.offset };
+  }
+
+  move(m) {
+    if (this.dragTarget && this.draft) {
+      this.draft[this.dragTarget] = this.pOf(m.y);
+      this.onDraft && this.onDraft(this.draft);
+      this.render();
+      return;
+    }
+    if (this.panStart) {
+      const d = Math.round((m.x - this.panStart.x) / this.slot);
+      this.offset = Nova.clamp(this.panStart.offset + d, 0, Math.max(0, this.data.candles.length - 6));
+      this.render();
+      return;
+    }
+    this.render();
+  }
+
+  up() {
+    this.dragTarget = null;
+    this.panStart = null;
+    this.pinch = null;
+  }
+
   bind() {
     const cv = this.cv;
+    cv.style.touchAction = 'none';          /* le geste pilote le graphique, pas la page */
     Nova.on(window, 'resize', () => this.resize());
+    Nova.on(window, 'orientationchange', () => setTimeout(() => this.resize(), 180));
 
+    /* --- souris --- */
     Nova.on(cv, 'wheel', (e) => {
       e.preventDefault();
-      const f = e.deltaY > 0 ? 1.12 : 0.89;
-      this.visible = Nova.clamp(Math.round(this.visible * f), 18, 600);
+      this.visible = Nova.clamp(Math.round(this.visible * (e.deltaY > 0 ? 1.12 : 0.89)), 18, 600);
       this.render();
     }, { passive: false });
 
     Nova.on(cv, 'mousedown', (e) => {
-      const m = this.pos(e);
-      if (this.mode === 'draft' && this.draft) {
-        const hit = this.hitLine(m.y);
-        if (hit) { this.dragTarget = hit; this.mode = 'drag'; cv.style.cursor = 'grabbing'; return; }
-      }
-      if (this.mode === 'draft' && !this.draft) {
-        this.draft = null;
-        this.onPick && this.onPick(this.pOf(m.y));
-        return;
-      }
-      this.panStart = { x: m.x, offset: this.offset };
-      cv.style.cursor = 'grabbing';
+      if (e.button !== 0) return;
+      this.down(this.pos(e));
+      cv.style.cursor = (this.mode === 'draft' && this.draft && this.dragTarget) ? 'grabbing' : cv.style.cursor;
     });
 
     Nova.on(window, 'mousemove', (e) => {
       const m = this.pos(e);
       this.hover = (m.x >= 0 && m.x <= this.w && m.y >= 0 && m.y <= this.h) ? m : null;
-      if (this.dragTarget && this.draft) {
-        const p = this.pOf(m.y);
-        this.draft[this.dragTarget] = p;
-        this.onDraft && this.onDraft(this.draft);
-        this.render(); return;
-      }
-      if (this.panStart) {
-        const d = Math.round((m.x - this.panStart.x) / this.slot);
-        this.offset = Nova.clamp(this.panStart.offset + d, 0, Math.max(0, this.data.candles.length - 6));
-        this.render(); return;
-      }
-      if (this.mode === 'draft') {
-        cv.style.cursor = this.draft && this.hitLine(m.y) ? 'ns-resize' : 'crosshair';
-      } else cv.style.cursor = 'crosshair';
+      if (this.dragTarget || this.panStart) { this.move(m); return; }
+      cv.style.cursor = (this.mode === 'draft' && this.draft && this.hitLine(m.y)) ? 'ns-resize'
+        : this.mode === 'draft' ? 'crosshair' : 'crosshair';
       this.render();
     });
 
-    Nova.on(window, 'mouseup', () => {
-      this.dragTarget = null; this.panStart = null;
-      cv.style.cursor = this.mode === 'draft' ? 'crosshair' : 'default';
-    });
-
+    Nova.on(window, 'mouseup', () => { this.up(); cv.style.cursor = 'crosshair'; });
     Nova.on(cv, 'mouseleave', () => { this.hover = null; this.render(); });
     Nova.on(cv, 'dblclick', () => { this.offset = 0; this.render(); });
+
+    /* --- tactile --- */
+    const tp = t => this.pos(t);
+    const dist = ts => Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY);
+
+    Nova.on(cv, 'touchstart', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        this.pinch = { d: dist(e.touches), visible: this.visible };
+        this.panStart = null; this.dragTarget = null;
+        return;
+      }
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      const m = tp(e.touches[0]);
+      this.hover = m;
+      this.down(m);
+    }, { passive: false });
+
+    Nova.on(cv, 'touchmove', (e) => {
+      if (e.touches.length === 2 && this.pinch) {
+        e.preventDefault();
+        const d = dist(e.touches);
+        this.visible = Nova.clamp(Math.round(this.pinch.visible * this.pinch.d / Math.max(1, d)), 18, 600);
+        this.render();
+        return;
+      }
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      const m = tp(e.touches[0]);
+      this.hover = m;
+      this.move(m);
+    }, { passive: false });
+
+    const endTouch = (e) => {
+      if (e.touches.length === 0) { this.up(); this.hover = null; this.render(); }
+      else if (e.touches.length === 1) this.pinch = null;
+    };
+    Nova.on(cv, 'touchend', endTouch, { passive: true });
+    Nova.on(cv, 'touchcancel', endTouch, { passive: true });
   }
 
   pos(e) {
