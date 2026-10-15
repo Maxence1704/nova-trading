@@ -1,0 +1,25 @@
+{
+  "name": "Nova Terminal — apprendre le trading en jouant",
+  "short_name": "Nova",
+  "description": "Marché simulé crédible, compte virtuel et coach qui évalue la qualité de vos décisions séparément de leur résultat. Chaque notion renvoie à une source vérifiable.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "nova-terminal",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#07080A",
+  "theme_color": "#07080A",
+  "categories": ["education", "games", "finance"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Nouvelle session", "short_name": "Session", "url": "./index.html#session" },
+    { "name": "Campagne", "short_name": "Campagne", "url": "./index.html#campaign" },
+    { "name": "Bibliothèque", "short_name": "Savoir", "url": "./index.html#library" }
+  ]
+}
